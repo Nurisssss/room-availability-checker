@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Campus Room Availability Checker</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--tx:#1b1f27;--mut:#5d6675;--bd:#d8dce3;--ac:#2956d6;--ok:#14733a;--okb:#e3f5ea;--no:#b3261e;--nob:#fcebea;--blk:#8a5a00;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2128;--tx:#e8eaee;--mut:#98a1b0;--bd:#343a45;--ac:#7c9cff;--ok:#6fd49a;--okb:#14301f;--no:#ff9a92;--nob:#3a1c1a;--blk:#f0b84a}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2128;--tx:#e8eaee;--mut:#98a1b0;--bd:#343a45;--ac:#7c9cff;--ok:#6fd49a;--okb:#14301f;--no:#ff9a92;--nob:#3a1c1a;--blk:#f0b84a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:920px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:8px 0 4px}h2{font-size:1.05rem;margin:0 0 12px}
+.sub{color:var(--mut);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
+label{display:block;font-weight:600;font-size:.9rem;margin:12px 0 4px}
+input,select,button{font:inherit;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);min-height:44px}
+input[aria-invalid="true"]{border-color:var(--no)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hint{font-size:.8rem;color:var(--mut);margin-top:4px}
+button{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600;margin-top:16px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.result{border-radius:10px;padding:14px;margin-top:16px;border:2px solid}
+.result.ok{background:var(--okb);color:var(--ok);border-color:var(--ok)}
+.result.no{background:var(--nob);color:var(--no);border-color:var(--no)}
+.result.err{background:var(--card);color:var(--tx);border-color:var(--no);border-style:dashed}
+.result strong{font-size:1.25rem;display:block}
+.result ul{margin:6px 0 0;padding-left:20px}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:99px;border:1px solid var(--blk);color:var(--blk)}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--bd)}
+th{color:var(--mut);font-weight:600;font-size:.8rem}
+.note{color:var(--mut);font-size:.8rem;margin-top:12px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Room Availability Checker</h1>
+  <p class="sub">Check whether a room can be booked. Sample data is fictional; checking never changes it.</p>
+  <div class="grid">
+    <section class="card" aria-labelledby="h-req">
+      <h2 id="h-req">Booking request</h2>
+      <label for="room">Room</label>
+      <select id="room"></select>
+      <div class="row">
+        <div><label for="now">Current time</label><input id="now" value="08:00" inputmode="numeric" placeholder="HH:MM"></div>
+        <div></div>
+        <div><label for="start">Start</label><input id="start" value="09:00" inputmode="numeric" placeholder="HH:MM"></div>
+        <div><label for="end">End</label><input id="end" value="10:00" inputmode="numeric" placeholder="HH:MM"></div>
+      </div>
+      <p class="hint">24-hour HH:MM. Valid range 00:00–24:00; the start must be after the current time; max 120 minutes.</p>
+      <button id="check" type="button">Check availability</button>
+      <div id="result" role="status" aria-live="polite"></div>
+    </section>
+    <section class="card" aria-labelledby="h-room">
+      <h2 id="h-room">Selected room</h2>
+      <div id="roominfo"></div>
+    </section>
+  </div>
+</main>
+<script>
+// Fictional sample data (read-only: deep-frozen so checks cannot modify it)
+const ROOMS = Object.freeze([
+  Object.freeze({id:"A101",name:"Maple Hall A101",blocked:false,bookings:Object.freeze([
+    Object.freeze({start:540,end:600,who:"Intro Biology"}),
+    Object.freeze({start:720,end:810,who:"Study Circle"}),
+    Object.freeze({start:900,end:960,who:"Robotics Club"})])}),
+  Object.freeze({id:"B204",name:"Cedar Lab B204",blocked:true,bookings:Object.freeze([
+    Object.freeze({start:600,end:660,who:"Maintenance hold"})])}),
+  Object.freeze({id:"C310",name:"Birch Studio C310",blocked:false,bookings:Object.freeze([])})
+]);
+
+const $ = id => document.getElementById(id);
+const fmt = m => String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+
+function parseTime(s){
+  const m = /^(\d{1,2}):([0-5]\d)$/.exec(s.trim());
+  if(!m) return null;
+  const v = +m[1]*60 + +m[2];
+  return v <= 1440 ? v : null;
+}
+
+// Returns {errors:[], reasons:[]}; errors = invalid input, reasons = rule failures
+function evaluate(room, now, start, end){
+  const errors=[], reasons=[];
+  if(now===null) errors.push(["now","Current time is missing or not a valid time. Enter HH:MM (00:00–24:00)."]);
+  if(start===null) errors.push(["start","Start is missing or not a valid time. Enter HH:MM (00:00–24:00)."]);
+  if(end===null) errors.push(["end","End is missing or not a valid time. Enter HH:MM (00:00–24:00)."]);
+  if(errors.length) return {errors,reasons};
+  if(!(0<=start && start<end && end<=1440)) errors.push(["end","End must be later than start (0 ≤ start < end ≤ 1440)."]);
+  if(!(start>now)) errors.push(["start","Start must be after the current time ("+fmt(now)+")."]);
+  if(errors.length) return {errors,reasons};
+  if(end-start>120) reasons.push("Booking is "+(end-start)+" minutes; the maximum is 120.");
+  if(room.blocked) reasons.push(room.name+" is blocked and cannot be booked.");
+  room.bookings.filter(b=>start<b.end && end>b.start)
+    .forEach(b=>reasons.push("Overlaps "+b.who+" ("+fmt(b.start)+"–"+fmt(b.end)+")."));
+  return {errors,reasons};
+}
+
+function renderRoom(){
+  const r = ROOMS.find(x=>x.id===$("room").value);
+  const rows = r.bookings.length
+    ? "<table><thead><tr><th>Start</th><th>End</th><th>Booked by</th></tr></thead><tbody>"+
+      r.bookings.map(b=>"<tr><td>"+fmt(b.start)+"</td><td>"+fmt(b.end)+"</td><td>"+b.who+"</td></tr>").join("")+"</tbody></table>"
+    : "<p class='hint'>No existing bookings.</p>";
+  $("roominfo").innerHTML = "<p><strong>"+r.name+"</strong> "+(r.blocked?"<span class='tag'>BLOCKED</span>":"")+"</p>"+rows+
+    "<p class='note'>Back-to-back bookings are allowed (end time = next start time).</p>";
+  $("result").innerHTML="";
+}
+
+function check(){
+  const room = ROOMS.find(x=>x.id===$("room").value);
+  ["now","start","end"].forEach(i=>$(i).removeAttribute("aria-invalid"));
+  const now = parseTime($("now").value), start = parseTime($("start").value), end = parseTime($("end").value);
+  const {errors,reasons} = evaluate(room, now, start, end);
+  const out = $("result");
+  if(errors.length){
+    errors.forEach(([id])=>$(id).setAttribute("aria-invalid","true"));
+    out.innerHTML = "<div class='result err'><strong>Can't check yet — fix the highlighted fields</strong><ul>"+errors.map(e=>"<li>"+e[1]+"</li>").join("")+"</ul></div>";
+  } else if(reasons.length){
+    out.innerHTML = "<div class='result no'><strong>✕ Unavailable</strong><ul>"+reasons.map(r=>"<li>"+r+"</li>").join("")+"</ul></div>";
+  } else {
+    out.innerHTML = "<div class='result ok'><strong>✓ Available</strong>"+room.name+" is free "+fmt(start)+"–"+fmt(end)+". (Nothing was booked or changed.)</div>";
+  }
+}
+
+ROOMS.forEach(r=>$("room").add(new Option(r.name+(r.blocked?" (blocked)":""),r.id)));
+$("room").addEventListener("change",renderRoom);
+$("check").addEventListener("click",check);
+["now","start","end"].forEach(i=>$(i).addEventListener("keydown",e=>{if(e.key==="Enter")check();}));
+renderRoom();
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+[M1] booking.first.test.js | change: >   if (end - start >= 120) return { ok: false, reason: 'Maximum length is 120 minutes.' };
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 16 passed (17)
+   failing: × canBook > T06 exactly 120 minutes is available (AC2) 21ms;FAIL  booking.first.test.js > canBook > T06 exactly 120 minutes is available (AC2);
+[M2] booking.first.test.js | change: >     if (start <= b.end && end >= b.start) return { ok: false, reason: `Overlaps ${b.start}-${b.end}.` };
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  2 failed | 15 passed (17)
+   failing: × canBook > T01 touching after is available (AC4) 15ms;× canBook > T08 touching before is available (AC4) 1ms;FAIL  booking.first.test.js > canBook > T01 touching after is available (AC4
+[M3] booking.first.test.js | change: >   
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 16 passed (17)
+   failing: × canBook > T13 blocked room is unavailable (AC3) 19ms;FAIL  booking.first.test.js > canBook > T13 blocked room is unavailable (AC3);
+[M4] booking.first.test.js | change: >   if (start < 0 || end >= 1440 || start >= end) return { ok: false, reason: 'Use 0 <= start < end <= 1440.' };
+         Tests  17 passed (17)
+   failing: 
+[M5] booking.first.test.js | change: >   room.bookings.sort((a, c) => c.start - a.start); for (const b of room.bookings) {
+         Tests  17 passed (17)
+   failing: 
+=====
+[M1] booking.test.js | change: >   if (end - start >= 120) return { ok: false, reason: 'Maximum length is 120 minutes.' };
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+   failing: × canBook decisions > T06 exactly 120 minutes ({ start: 720, end: 840 }) 15ms;FAIL  booking.test.js > canBook decisions > T06 exactly 120 minutes ({ start: 720, end: 840 });
+[M2] booking.test.js | change: >     if (start <= b.end && end >= b.start) return { ok: false, reason: `Overlaps ${b.start}-${b.end}.` };
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 20 passed (23)
+   failing: × canBook decisions > T01 touching after ({ start: 660, end: 720 }) 16ms;× canBook decisions > T08 touching before ({ start: 570, end: 600 }) 1ms;× AC5: existing booking data is preserv
+[M3] booking.test.js | change: >   
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+   failing: × canBook decisions > T13 blocked room ({ start: 660, end: 720, blocked: true }) 14ms;FAIL  booking.test.js > canBook decisions > T13 blocked room ({ start: 660, end: 720, blocked: true }
+[M4] booking.test.js | change: >   if (start < 0 || end >= 1440 || start >= end) return { ok: false, reason: 'Use 0 <= start < end <= 1440.' };
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+   failing: × canBook decisions > X2 ends exactly at day end 1440 (last valid minute) ({ start: 1380, end: 1440 }) 12ms;FAIL  booking.test.js > canBook decisions > X2 ends exactly at day end 1440 (la
+[M5] booking.test.js | change: >   room.bookings.sort((a, c) => c.start - a.start); for (const b of room.bookings) {
+   ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 22 passed (23)
+   failing: × AC5: existing booking data is preserved > deep-equal after available and unavailable checks, repeated 24ms;FAIL  booking.test.js > AC5: existing booking data is preserved > deep-equal a
+=====

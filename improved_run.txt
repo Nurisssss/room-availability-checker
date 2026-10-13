@@ -1,0 +1,10 @@
+
+ RUN  v2.1.9 /home/claude/sc2
+
+ ✓ booking.test.js (23 tests) 10ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  13:42:52
+   Duration  628ms (transform 102ms, setup 0ms, collect 56ms, tests 10ms, environment 0ms, prepare 192ms)
+
